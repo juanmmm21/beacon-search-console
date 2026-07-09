@@ -1,0 +1,74 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "beacon-search-console"
+version = "0.1.0"
+description = "Buscador funcional completo (FastAPI + React) que ensambla el ecosistema beacon-search-engine sobre un corpus real."
+readme = "../README.md"
+requires-python = ">=3.11"
+license = { file = "../LICENSE" }
+authors = [{ name = "Juan Martos Cuevas", email = "martoscuevasjuan@gmail.com" }]
+dependencies = [
+    "fastapi>=0.110,<1",
+    "uvicorn[standard]>=0.29,<1",
+    # Las tres dependencias de paquete real de este proyecto, cada una instalada
+    # directamente desde su propio repositorio (no publicadas en PyPI): la única
+    # pieza del ecosistema que ensambla a las demás, así que es la única que
+    # necesita importarlas de verdad en vez de solo leer sus formatos en disco
+    # (ver ../PROGRESS.md, nota de handoff de distributed-index-sharding).
+    "distributed-index-sharding @ git+https://github.com/juanmmm21/distributed-index-sharding.git@main",
+    "query-parser-autocomplete @ git+https://github.com/juanmmm21/query-parser-autocomplete.git@main",
+    "learning-to-rank-reranker @ git+https://github.com/juanmmm21/learning-to-rank-reranker.git@main",
+]
+
+[project.scripts]
+beacon-search-console = "beacon_search_console.__main__:main"
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8,<9",
+    "pytest-asyncio>=0.23,<1",
+    "httpx>=0.27,<1",
+    "mypy>=1.10,<2",
+    "ruff>=0.5,<1",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/beacon_search_console"]
+
+[tool.hatch.metadata]
+# Ninguna de las tres dependencias de arriba está publicada en PyPI; hatchling
+# rechaza por defecto una dependencia por URL directa (PEP 508) salvo que se
+# habilite explícitamente aquí (mismo patrón ya usado en distributed-index-sharding
+# para depender de bm25-ranking-engine).
+allow-direct-references = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+
+[[tool.mypy.overrides]]
+# Ninguno de los tres publica un marcador `py.typed` en su distribución
+# (verificado directamente en sus árboles fuente, no asumido) — mismo patrón ya
+# documentado para `bm25-ranking-engine` en distributed-index-sharding y para
+# `lightgbm` en learning-to-rank-reranker.
+module = [
+    "distributed_index_sharding.*",
+    "query_parser_autocomplete.*",
+    "learning_to_rank_reranker.*",
+    "bm25_ranking_engine.*",
+]
+ignore_missing_imports = true

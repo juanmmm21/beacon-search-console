@@ -1,0 +1,13 @@
+{
+  "name": "beacon-search-console",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Buscador funcional completo (FastAPI + React) que ensambla el ecosistema beacon-search-engine sobre un corpus real.",
+  "scripts": {
+    "dev": "npm run dev --prefix frontend",
+    "build": "npm run build --prefix frontend",
+    "preview": "npm run preview --prefix frontend",
+    "typecheck": "npm run typecheck --prefix frontend",
+    "install:frontend": "npm install --prefix frontend"
+  }
+}
