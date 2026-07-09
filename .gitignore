@@ -9,6 +9,7 @@ __pycache__/
 
 # Entornos virtuales
 backend/.venv/
+/.bootstrap-venv/
 .venv/
 venv/
 env/
