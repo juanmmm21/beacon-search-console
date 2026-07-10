@@ -24,6 +24,13 @@ SEED_URLS=(
 MAX_PAGES="${MAX_PAGES:-180}"
 MAX_DEPTH="${MAX_DEPTH:-2}"
 NUM_SHARDS="${NUM_SHARDS:-3}"
+# `--max-depth 2` sigue outbound links dos saltos desde las semillas, y
+# docs.python.org enlaza a páginas de github.com (permalinks "Edit on
+# GitHub", historial de cpython...) que web-crawler-scheduler no tiene forma
+# de excluir por sí solo (no ofrece restricción de dominio, ver
+# scripts/filter_corpus_domain.py). ALLOWED_DOMAINS acota el corpus resultante
+# a lo que realmente se quiso indexar.
+ALLOWED_DOMAINS=("docs.python.org")
 
 echo "== beacon-search-console: bootstrap del corpus real (docs.python.org/3) =="
 
@@ -53,6 +60,11 @@ web-crawler-scheduler crawl \
   --max-concurrent-requests 8 \
   --max-concurrent-per-domain 4 \
   --min-delay-seconds 0.25
+
+echo "-- filtro de dominio: descarta páginas fuera de ${ALLOWED_DOMAINS[*]} seguidas por outlinks --"
+python3 "${ROOT_DIR}/scripts/filter_corpus_domain.py" \
+  "${DATA_DIR}/crawl/pages.jsonl" "${DATA_DIR}/crawl/pages.jsonl" \
+  $(for d in "${ALLOWED_DOMAINS[@]}"; do printf -- "--allowed-domain %s " "$d"; done)
 
 echo "-- 2/6 extractor: html-content-extractor --"
 html-content-extractor extract "${DATA_DIR}/crawl/pages.jsonl" \
