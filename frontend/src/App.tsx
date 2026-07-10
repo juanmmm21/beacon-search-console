@@ -10,8 +10,26 @@ import type { SearchResponse } from "./types/api";
 const SEARCH_DEBOUNCE_MS = 300;
 const RESULT_LIMIT = 10;
 
+/** La query vive también en la URL (`?q=`), como en cualquier buscador:
+ * una búsqueda es un enlace compartible y sobrevive a recargar la página. */
+function queryFromLocation(): string {
+  return new URLSearchParams(window.location.search).get("q") ?? "";
+}
+
+function syncQueryToLocation(query: string): void {
+  const url = new URL(window.location.href);
+  if (query) {
+    url.searchParams.set("q", query);
+  } else {
+    url.searchParams.delete("q");
+  }
+  // replaceState, no pushState: cada tecla no debe crear una entrada de
+  // historial nueva.
+  window.history.replaceState(null, "", url);
+}
+
 export default function App() {
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState(queryFromLocation);
   const [response, setResponse] = useState<SearchResponse | null>(null);
   const [searching, setSearching] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
@@ -23,6 +41,7 @@ export default function App() {
 
   useEffect(() => {
     const trimmed = debouncedQuery.trim();
+    syncQueryToLocation(trimmed);
     searchAbortRef.current?.abort();
 
     if (!trimmed) {
