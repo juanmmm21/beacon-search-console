@@ -1,0 +1,5 @@
+{"url": "http://example.com/python-tutorial", "outlinks": ["http://example.com/python-search-library"]}
+{"url": "http://example.com/search-engines", "outlinks": ["http://example.com/pagerank-explained"]}
+{"url": "http://example.com/python-search-library", "outlinks": ["http://example.com/search-engines", "http://example.com/pagerank-explained"]}
+{"url": "http://other.com/unrelated", "outlinks": []}
+{"url": "http://example.com/pagerank-explained", "outlinks": ["http://example.com/python-tutorial"]}

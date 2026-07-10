@@ -1,0 +1,21 @@
+{
+  "format_version": 1,
+  "model_file": "model.txt",
+  "feature_names": [
+    "bm25_normalized",
+    "pagerank_score",
+    "matched_term_ratio",
+    "min_term_position_normalized",
+    "term_span_normalized",
+    "document_length_normalized"
+  ],
+  "params": {
+    "objective": "lambdarank",
+    "metric": "ndcg",
+    "num_leaves": 15,
+    "learning_rate": 0.05,
+    "num_boost_round": 100,
+    "min_data_in_leaf": 5,
+    "seed": 7
+  }
+}

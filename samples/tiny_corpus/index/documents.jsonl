@@ -1,0 +1,5 @@
+{"doc_id": 0, "url": "http://example.com/python-tutorial", "title": "Python Tutorial", "length": 23}
+{"doc_id": 1, "url": "http://example.com/search-engines", "title": "How Search Engines Work", "length": 24}
+{"doc_id": 2, "url": "http://example.com/python-search-library", "title": "Building A Search Library In Python", "length": 23}
+{"doc_id": 3, "url": "http://other.com/unrelated", "title": "Gardening Tips", "length": 21}
+{"doc_id": 4, "url": "http://example.com/pagerank-explained", "title": "PageRank Explained", "length": 26}

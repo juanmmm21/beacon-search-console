@@ -51,7 +51,7 @@ class ShardedRerankContext:
         if not manifest_path.exists():
             raise FileNotFoundError(
                 f"no existe {manifest_path}: ¿se ejecutó scripts/bootstrap_corpus.sh "
-                "(o build_tiny_fixture.sh) antes de arrancar la API?"
+                "antes de arrancar la API?"
             )
         manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
         shard_dir_names = [str(name) for name in manifest["shard_dir_names"]]

@@ -1,0 +1,14 @@
+{
+  "damping_factor": 0.85,
+  "tolerance": 1e-06,
+  "max_iterations": 100,
+  "iterations_run": 44,
+  "converged": true,
+  "final_delta": 5.904984746729625e-07,
+  "elapsed_seconds": 0.00017591599862498697,
+  "total_documents": 5,
+  "resolved_edges": 5,
+  "dangling_documents": 1,
+  "unresolved_source_entries": 0,
+  "unresolved_target_links": 0
+}

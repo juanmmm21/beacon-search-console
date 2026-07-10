@@ -1,6 +1,6 @@
 """Configuración de la app: rutas a los artefactos que produce
-`scripts/bootstrap_corpus.sh` (o `scripts/build_tiny_fixture.sh` para tests) y
-parámetros de orquestación del pipeline de consulta. Todo configurable por
+`scripts/bootstrap_corpus.sh` (o el fixture versionado `samples/tiny_corpus/`
+para tests) y parámetros de orquestación del pipeline de consulta. Todo configurable por
 variable de entorno, con valores por defecto que apuntan a `data/` en la raíz
 del repo — el layout que produce el bootstrap real (ver README, sección
 "Cómo levantar el pipeline")."""

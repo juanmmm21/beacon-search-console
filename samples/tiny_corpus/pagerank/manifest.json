@@ -1,0 +1,5 @@
+{
+  "format_version": 1,
+  "scores_file": "pagerank_scores.jsonl",
+  "convergence_file": "convergence.json"
+}

@@ -1,0 +1,7 @@
+{
+  "num_shards": 2,
+  "shard_dir_names": [
+    "shard-0",
+    "shard-1"
+  ]
+}

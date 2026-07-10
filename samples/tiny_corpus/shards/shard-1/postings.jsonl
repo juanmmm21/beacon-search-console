@@ -1,0 +1,36 @@
+{"term": "a", "document_frequency": 1, "postings": [{"doc_id": 1, "term_frequency": 3, "positions": [0, 11, 19]}]}
+{"term": "algorithm", "document_frequency": 1, "postings": [{"doc_id": 1, "term_frequency": 1, "positions": [21]}]}
+{"term": "an", "document_frequency": 1, "postings": [{"doc_id": 1, "term_frequency": 1, "positions": [15]}]}
+{"term": "and", "document_frequency": 2, "postings": [{"doc_id": 1, "term_frequency": 2, "positions": [5, 18]}, {"doc_id": 3, "term_frequency": 2, "positions": [7, 17]}]}
+{"term": "big", "document_frequency": 1, "postings": [{"doc_id": 3, "term_frequency": 1, "positions": [16]}]}
+{"term": "bm25", "document_frequency": 1, "postings": [{"doc_id": 1, "term_frequency": 1, "positions": [23]}]}
+{"term": "building", "document_frequency": 1, "postings": [{"doc_id": 1, "term_frequency": 1, "positions": [10]}]}
+{"term": "by", "document_frequency": 1, "postings": [{"doc_id": 1, "term_frequency": 1, "positions": [8]}]}
+{"term": "documents", "document_frequency": 1, "postings": [{"doc_id": 1, "term_frequency": 1, "positions": [4]}]}
+{"term": "engine", "document_frequency": 1, "postings": [{"doc_id": 1, "term_frequency": 2, "positions": [2, 13]}]}
+{"term": "good", "document_frequency": 1, "postings": [{"doc_id": 3, "term_frequency": 1, "positions": [5]}]}
+{"term": "grow", "document_frequency": 1, "postings": [{"doc_id": 3, "term_frequency": 1, "positions": [15]}]}
+{"term": "healthy", "document_frequency": 1, "postings": [{"doc_id": 3, "term_frequency": 1, "positions": [18]}]}
+{"term": "helps", "document_frequency": 1, "postings": [{"doc_id": 3, "term_frequency": 1, "positions": [13]}]}
+{"term": "in", "document_frequency": 1, "postings": [{"doc_id": 3, "term_frequency": 1, "positions": [2]}]}
+{"term": "index", "document_frequency": 1, "postings": [{"doc_id": 1, "term_frequency": 1, "positions": [17]}]}
+{"term": "indexes", "document_frequency": 1, "postings": [{"doc_id": 1, "term_frequency": 1, "positions": [3]}]}
+{"term": "inverted", "document_frequency": 1, "postings": [{"doc_id": 1, "term_frequency": 1, "positions": [16]}]}
+{"term": "like", "document_frequency": 1, "postings": [{"doc_id": 1, "term_frequency": 1, "positions": [22]}]}
+{"term": "of", "document_frequency": 1, "postings": [{"doc_id": 3, "term_frequency": 1, "positions": [9]}]}
+{"term": "planting", "document_frequency": 1, "postings": [{"doc_id": 3, "term_frequency": 1, "positions": [0]}]}
+{"term": "plenty", "document_frequency": 1, "postings": [{"doc_id": 3, "term_frequency": 1, "positions": [8]}]}
+{"term": "ranking", "document_frequency": 1, "postings": [{"doc_id": 1, "term_frequency": 1, "positions": [20]}]}
+{"term": "ranks", "document_frequency": 1, "postings": [{"doc_id": 1, "term_frequency": 1, "positions": [6]}]}
+{"term": "regularly", "document_frequency": 1, "postings": [{"doc_id": 3, "term_frequency": 1, "positions": [12]}]}
+{"term": "relevance", "document_frequency": 1, "postings": [{"doc_id": 1, "term_frequency": 1, "positions": [9]}]}
+{"term": "requires", "document_frequency": 2, "postings": [{"doc_id": 1, "term_frequency": 1, "positions": [14]}, {"doc_id": 3, "term_frequency": 1, "positions": [4]}]}
+{"term": "search", "document_frequency": 1, "postings": [{"doc_id": 1, "term_frequency": 2, "positions": [1, 12]}]}
+{"term": "soil", "document_frequency": 1, "postings": [{"doc_id": 3, "term_frequency": 1, "positions": [6]}]}
+{"term": "spring", "document_frequency": 1, "postings": [{"doc_id": 3, "term_frequency": 1, "positions": [3]}]}
+{"term": "summer", "document_frequency": 1, "postings": [{"doc_id": 3, "term_frequency": 1, "positions": [20]}]}
+{"term": "sunlight", "document_frequency": 1, "postings": [{"doc_id": 3, "term_frequency": 1, "positions": [10]}]}
+{"term": "them", "document_frequency": 1, "postings": [{"doc_id": 1, "term_frequency": 1, "positions": [7]}]}
+{"term": "through", "document_frequency": 1, "postings": [{"doc_id": 3, "term_frequency": 1, "positions": [19]}]}
+{"term": "tomatoes", "document_frequency": 1, "postings": [{"doc_id": 3, "term_frequency": 2, "positions": [1, 14]}]}
+{"term": "watering", "document_frequency": 1, "postings": [{"doc_id": 3, "term_frequency": 1, "positions": [11]}]}
