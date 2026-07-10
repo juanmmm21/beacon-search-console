@@ -56,6 +56,12 @@ target-version = "py311"
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "SIM"]
 
+[tool.ruff.lint.flake8-bugbear]
+# `Depends(...)`/`Query(...)` en valores por defecto es el idioma estándar de
+# FastAPI para inyección de dependencias, no la trampa de "objeto mutable
+# compartido entre llamadas" que B008 existe para detectar.
+extend-immutable-calls = ["fastapi.Depends", "fastapi.Query"]
+
 [tool.mypy]
 python_version = "3.11"
 strict = true
