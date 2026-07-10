@@ -5,7 +5,7 @@ Repository: [`github.com/juanmmm21/beacon-search-console`](https://github.com/ju
 
 A complete, working search engine console — FastAPI backend + React/TypeScript
 frontend — that assembles the nine infrastructure pieces of the ecosystem into
-one product and runs them over a **real corpus**: 187 pages crawled live from
+one product and runs them over a **real corpus**: 181 pages crawled live from
 `docs.python.org/3` (tutorial + library reference), indexed, compressed,
 partitioned into shards, and served with BM25 + PageRank + learning-to-rank
 reranking, live autocomplete, spell correction, and highlighted snippets. No
@@ -28,38 +28,40 @@ content crawled from the real web, with the failure modes of a real system
 ## Role in `beacon-search-engine`
 
 ```text
-                 OFFLINE (scripts/bootstrap_corpus.sh)
-┌────────────────────────────────────────────────────────────────────┐
-│ web-crawler-scheduler ──▶ html-content-extractor                   │
-│    │ link_graph.jsonl        │ documents.jsonl (main_text)         │
-│    │                         ▼                                     │
-│    │                  inverted-index-builder                       │
-│    │                         │ index/ (postings + stats)           │
-│    │                         ▼                                     │
-│    │                  index-compression-codec                      │
-│    │                         │ compressed index                    │
-│    ▼                         ▼                                     │
-│ pagerank-link-analysis   distributed-index-sharding `partition`    │
-│    │ pagerank_scores         │ shard-0/ .. shard-N/                │
-│    └──────────┐              │       learning-to-rank-reranker     │
-│               │              │            │ trained model          │
-└───────────────┼──────────────┼────────────┼────────────────────────┘
-                ▼              ▼            ▼
-                 ONLINE (this project)
-┌────────────────────────────────────────────────────────────────────┐
-│  FastAPI backend                                                   │
-│    query ─▶ query-parser-autocomplete (parse + spellcheck)         │
-│          ─▶ distributed-index-sharding (fan-out to N shard         │
-│             processes, each scoring with bm25-ranking-engine,      │
-│             k-way merge, tolerance to shard failure)               │
-│          ─▶ learning-to-rank-reranker (BM25 + PageRank + match     │
-│             features, grouped per shard — see Architecture)        │
-│          ─▶ snippets from html-content-extractor's documents.jsonl │
-│                                                                    │
-│  React + TypeScript frontend                                       │
-│    debounced search · live autocomplete · highlighted snippets ·   │
-│    index stats panel · explicit shard-degradation banner           │
-└────────────────────────────────────────────────────────────────────┘
+                     OFFLINE (scripts/bootstrap_corpus.sh)
+┌──────────────────────────────────────────────────────────────────────────┐
+│ web-crawler-scheduler ──▶ filter_corpus_domain.py ──▶ html-content-extractor │
+│    │ link_graph.jsonl      (this project's own step,      │ documents.jsonl │
+│    │                        keeps only the seed domain)   ▼ (main_text)     │
+│    │                                              inverted-index-builder    │
+│    │                                                     │ index/ (postings  │
+│    │                                                     │  + stats)         │
+│    │                                                     ▼                  │
+│    │                                              index-compression-codec   │
+│    │                                                     │ compressed index │
+│    ▼                                                     ▼                  │
+│ pagerank-link-analysis                       distributed-index-sharding     │
+│    │ pagerank_scores                             `partition` -> shard-0..N/ │
+│    └──────────────┐                                      │                  │
+│                    │                          learning-to-rank-reranker     │
+│                    │                                      │ trained model   │
+└────────────────────┼──────────────────────────────────────┼──────────────────┘
+                     ▼                                      ▼
+                     ONLINE (this project)
+┌──────────────────────────────────────────────────────────────────────────┐
+│  FastAPI backend                                                          │
+│    query ─▶ query-parser-autocomplete (parse + spellcheck)                │
+│          ─▶ distributed-index-sharding (fan-out to N shard                │
+│             processes, each scoring with bm25-ranking-engine,             │
+│             k-way merge, tolerance to shard failure)                      │
+│          ─▶ learning-to-rank-reranker (BM25 + PageRank + match            │
+│             features, grouped per shard — see Architecture)               │
+│          ─▶ snippets from html-content-extractor's documents.jsonl        │
+│                                                                            │
+│  React + TypeScript frontend                                              │
+│    debounced search · live autocomplete · highlighted snippets ·          │
+│    index stats panel · explicit shard-degradation banner                  │
+└──────────────────────────────────────────────────────────────────────────┘
 ```
 
 This is where the whole ecosystem converges — the app every other README
@@ -93,6 +95,14 @@ refers to as "converges in `beacon-search-console`".
   `robots.txt`, crawled with the polite rate-limiting
   [`web-crawler-scheduler`](https://github.com/juanmmm21/web-crawler-scheduler)
   enforces) — no canned fixtures in production, no fake data in the demo.
+  `web-crawler-scheduler` has no domain-restriction flag of its own (it's a
+  reusable crawling primitive, not scoped to any one corpus), so a crawl at
+  `--max-depth 2` legitimately follows outbound links off `docs.python.org`
+  (permalinks into `github.com/python/cpython`, mostly); `scripts/filter_corpus_domain.py`
+  is this project's own intermediate step — never a change to the crawler
+  itself — that keeps only the seed domain's pages before extraction, so the
+  indexed corpus is exactly the "real corner of the web" this app set out to
+  serve, not everything the crawl happened to reach.
 - **Failure handled as a feature**: killing a shard process mid-session
   degrades the response (`degraded: true`, per-shard statuses, partial
   results from the healthy shards) instead of returning a 500 — surfaced in
@@ -143,8 +153,13 @@ manifest, and the most recent `fetched_at` in the extractor's output.
 ```text
 beacon-search-console/
 ├── scripts/
-│   └── bootstrap_corpus.sh    # offline pipeline: crawl → extract → index →
-│                              # compress → pagerank → partition → train LTR
+│   ├── bootstrap_corpus.sh       # offline pipeline: crawl → filter domain →
+│   │                             # extract → index → compress → pagerank →
+│   │                             # partition → train LTR
+│   ├── filter_corpus_domain.py   # keeps only the seed domain's pages
+│   │                             # (web-crawler-scheduler has no domain
+│   │                             # restriction of its own, see Goal above)
+│   └── tests/                   # unittest, stdlib only, no extra dependency
 ├── data/                      # bootstrap output (gitignored, reproducible)
 ├── samples/tiny_corpus/       # 5-doc deterministic fixture for backend tests
 ├── backend/
@@ -164,7 +179,9 @@ beacon-search-console/
         ├── types/api.ts       # TS mirror of the backend contract
         ├── components/        # SearchBox (with autocomplete dropdown),
         │                      # SearchResults, SnippetText, StatsPanel,
-        │                      # ShardStatusBanner
+        │                      # ShardStatusBanner — each with a Vitest +
+        │                      # Testing Library test alongside it
+        ├── hooks/useDebouncedValue.ts  # + its own debounce unit test
         └── App.tsx            # debounced search, ?q= URL sync
 ```
 
@@ -271,8 +288,13 @@ ruff check src/ tests/
 mypy --strict src/
 
 # Frontend (from frontend/)
+npm run test            # Vitest + Testing Library, 30 tests
 npm run typecheck
 npm run build
+
+# scripts/filter_corpus_domain.py (from the repo root) — stdlib-only, no
+# extra dependency, so plain unittest rather than pytest
+python3 -m unittest discover -s scripts/tests
 ```
 
 Backend tests run against `samples/tiny_corpus/` — a 5-document,
@@ -284,6 +306,17 @@ is covered with an in-memory pipeline double, mirroring how
 `distributed-index-sharding` tests its own coordinator; the
 kill-a-real-process path is covered by that project's end-to-end suite and by
 manual smoke testing here.
+
+Frontend tests cover `SnippetText`'s range sanitation (out-of-bounds,
+negative, overlapping and unsorted highlight ranges — never trusting the
+backend's offsets blindly), the debounce hook in isolation
+(`useDebouncedValue`, including the "several rapid changes collapse into one"
+case the search box exists to guarantee), `SearchBox`'s live autocomplete
+(debounce, keyboard navigation, a rejected request closing the dropdown
+instead of throwing) against a mocked API client, `ShardStatusBanner`'s
+degradation rendering, and `App`-level integration (one search request per
+typing pause, the degraded banner rendering alongside the surviving shards'
+results, a connection error surfacing instead of crashing).
 
 ## Troubleshooting
 
@@ -306,10 +339,14 @@ manual smoke testing here.
   ranking stack (no positional adjacency in `bm25-ranking-engine`'s result;
   only `site:` has filter semantics) — documented in
   `distributed-index-sharding`'s Troubleshooting and stated in this UI.
-- **Everything indexed is `docs.python.org` but a couple of results are
-  GitHub pages**: the crawl follows outbound links up to `MAX_DEPTH`, so a
-  handful of externally-linked pages enter the corpus legitimately; they
-  rank like any other document.
+- **A result points outside `docs.python.org`**: shouldn't happen —
+  `filter_corpus_domain.py` runs right after the crawl and keeps only pages
+  whose `url` host is exactly `docs.python.org`, so externally-linked pages
+  the crawl reaches at `--max-depth 2` (mostly `github.com/python/cpython`
+  permalinks) never make it into `extracted/documents.jsonl`. If one still
+  shows up, `data/crawl/pages.jsonl` was likely edited or reused across a
+  bootstrap run without going back through the filter step — re-run
+  `bash scripts/bootstrap_corpus.sh` from a clean `data/` directory.
 - **`mypy` fails under `backend/tests/`**: expected — only `src/` is
   type-checked in `--strict` mode, the same convention as every other
   project in the ecosystem.
