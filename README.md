@@ -29,39 +29,37 @@ content crawled from the real web, with the failure modes of a real system
 
 ```text
                      OFFLINE (scripts/bootstrap_corpus.sh)
-┌──────────────────────────────────────────────────────────────────────────┐
+┌──────────────────────────────────────────────────────────────────────────────┐
 │ web-crawler-scheduler ──▶ filter_corpus_domain.py ──▶ html-content-extractor │
-│    │ link_graph.jsonl      (this project's own step,      │ documents.jsonl │
-│    │                        keeps only the seed domain)   ▼ (main_text)     │
-│    │                                              inverted-index-builder    │
-│    │                                                     │ index/ (postings  │
-│    │                                                     │  + stats)         │
-│    │                                                     ▼                  │
-│    │                                              index-compression-codec   │
-│    │                                                     │ compressed index │
-│    ▼                                                     ▼                  │
-│ pagerank-link-analysis                       distributed-index-sharding     │
-│    │ pagerank_scores                             `partition` -> shard-0..N/ │
-│    └──────────────┐                                      │                  │
-│                    │                          learning-to-rank-reranker     │
-│                    │                                      │ trained model   │
-└────────────────────┼──────────────────────────────────────┼──────────────────┘
-                     ▼                                      ▼
-                     ONLINE (this project)
-┌──────────────────────────────────────────────────────────────────────────┐
-│  FastAPI backend                                                          │
-│    query ─▶ query-parser-autocomplete (parse + spellcheck)                │
-│          ─▶ distributed-index-sharding (fan-out to N shard                │
-│             processes, each scoring with bm25-ranking-engine,             │
-│             k-way merge, tolerance to shard failure)                      │
-│          ─▶ learning-to-rank-reranker (BM25 + PageRank + match            │
-│             features, grouped per shard — see Architecture)               │
-│          ─▶ snippets from html-content-extractor's documents.jsonl        │
-│                                                                            │
-│  React + TypeScript frontend                                              │
-│    debounced search · live autocomplete · highlighted snippets ·          │
-│    index stats panel · explicit shard-degradation banner                  │
-└──────────────────────────────────────────────────────────────────────────┘
+│    │ link_graph.jsonl        │ documents.jsonl (main_text)                   │
+│    │                         ▼                                               │
+│    │                         inverted-index-builder                          │
+│    │                         │ index/ (postings + stats)                     │
+│    │                         ▼                                               │
+│    │                         index-compression-codec                         │
+│    │                         │ compressed index                              │
+│    ▼                         ▼                                               │
+│ pagerank-link-analysis   distributed-index-sharding `partition`              │
+│    │ pagerank_scores         │ shard-0/ .. shard-N/                          │
+│    └──────────┐              │       learning-to-rank-reranker               │
+│               │              │            │ trained model                    │
+└───────────────┼──────────────┼────────────┼──────────────────────────────────┘
+                ▼              ▼            ▼
+                 ONLINE (this project)
+┌──────────────────────────────────────────────────────────────────────────────┐
+│  FastAPI backend                                                             │
+│    query ─▶ query-parser-autocomplete (parse + spellcheck)                   │
+│          ─▶ distributed-index-sharding (fan-out to N shard                   │
+│             processes, each scoring with bm25-ranking-engine,                │
+│             k-way merge, tolerance to shard failure)                         │
+│          ─▶ learning-to-rank-reranker (BM25 + PageRank + match               │
+│             features, grouped per shard — see Architecture)                  │
+│          ─▶ snippets from html-content-extractor's documents.jsonl           │
+│                                                                              │
+│  React + TypeScript frontend                                                 │
+│    debounced search · live autocomplete · highlighted snippets ·             │
+│    index stats panel · explicit shard-degradation banner                     │
+└──────────────────────────────────────────────────────────────────────────────┘
 ```
 
 This is where the whole ecosystem converges — the app every other README
