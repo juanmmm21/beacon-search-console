@@ -1,5 +1,6 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { axe } from "jest-axe";
 import { useState } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { api } from "../api/client";
@@ -133,5 +134,34 @@ describe("SearchBox autocomplete", () => {
 
     expect(screen.getByText(/solo/)).toBeInTheDocument();
     expect(screen.getByText("site:")).toBeInTheDocument();
+  });
+
+  // El componente ya usa combobox/listbox/option de ARIA a mano (no un
+  // <select> nativo) — un test de accesibilidad real confirma que ese
+  // cableado no tiene errores críticos, en vez de asumir que "usar roles"
+  // basta por sí solo.
+  it("has no accessibility violations in its resting (closed) state", async () => {
+    const { container } = render(<SearchBox value="" onChange={vi.fn()} />);
+
+    const results = await axe(container);
+    expect(results).toHaveNoViolations();
+  });
+
+  it("has no accessibility violations with the suggestions dropdown open", async () => {
+    mockedAutocomplete.mockResolvedValue({
+      prefix: "pyt",
+      suggestions: [
+        { text: "python", score: 139 },
+        { text: "python3", score: 5 },
+      ],
+    });
+    const user = userEvent.setup();
+    const { container } = render(<ControlledSearchBox />);
+
+    await user.type(screen.getByRole("combobox"), "pyt");
+    await screen.findByRole("listbox", {}, { timeout: 1000 });
+
+    const results = await axe(container);
+    expect(results).toHaveNoViolations();
   });
 });

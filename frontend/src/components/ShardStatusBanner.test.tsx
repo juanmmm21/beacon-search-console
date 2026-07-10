@@ -1,4 +1,5 @@
 import { render, screen } from "@testing-library/react";
+import { axe } from "jest-axe";
 import { describe, expect, it } from "vitest";
 import type { ShardStatusInfo } from "../types/api";
 import { ShardStatusBanner } from "./ShardStatusBanner";
@@ -105,5 +106,21 @@ describe("ShardStatusBanner", () => {
     );
 
     expect(screen.getByRole("alert")).toBeInTheDocument();
+  });
+
+  it("has no accessibility violations when reporting a degraded shard", async () => {
+    const { container } = render(
+      <ShardStatusBanner
+        message="Resultados parciales: 1 de 3 nodos del índice no respondieron a tiempo."
+        shardStatuses={[
+          { shard_id: 0, status: "ok", error_message: null },
+          { shard_id: 1, status: "timeout", error_message: "tiempo agotado" },
+          { shard_id: 2, status: "error", error_message: "conexión rechazada" },
+        ]}
+      />,
+    );
+
+    const results = await axe(container);
+    expect(results).toHaveNoViolations();
   });
 });

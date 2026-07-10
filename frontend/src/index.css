@@ -31,6 +31,22 @@
   box-sizing: border-box;
 }
 
+/* Oculta visualmente sin sacarlo del árbol de accesibilidad (patrón
+   estándar, no `display: none`/`visibility: hidden`, que sí lo haría):
+   encabezados de sección que un lector de pantalla necesita para navegar
+   pero que no aportan nada a un usuario vidente ya orientado por el diseño. */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 body {
   margin: 0;
   background: var(--bg);

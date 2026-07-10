@@ -1,5 +1,6 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { axe } from "jest-axe";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { api } from "./api/client";
 import App from "./App";
@@ -131,5 +132,53 @@ describe("App", () => {
     expect(
       await screen.findByText(/No se pudo conectar con la API/, {}, { timeout: 1500 }),
     ).toBeInTheDocument();
+  });
+
+  // Árbol completo, no un componente aislado: cubre la combinación real de
+  // SearchBox + SearchResults/SnippetText + StatsPanel tal como se monta en
+  // producción, en dos estados representativos.
+  it("has no accessibility violations in the idle state (no query yet)", async () => {
+    const { container } = render(<App />);
+
+    // Deja que StatsPanel resuelva su fetch inicial antes de auditar: un
+    // spinner/"Cargando…" transitorio no debería, pero mejor no auditar un
+    // DOM a medio pintar.
+    await screen.findByText(/documentos indexados/);
+
+    const results = await axe(container);
+    expect(results).toHaveNoViolations();
+  });
+
+  it("has no accessibility violations in the degraded search-results state", async () => {
+    mockedSearch.mockResolvedValue({
+      query: "python",
+      results: [
+        {
+          doc_id: 1,
+          url: "https://docs.python.org/3/tutorial/index.html",
+          title: "The Python Tutorial",
+          snippet: {
+            text: "python is a popular programming language",
+            highlights: [{ start: 0, end: 6 }],
+          },
+          score: 4.5,
+        },
+      ],
+      corrections: [{ original: "pyhton", corrected: "python" }],
+      shard_statuses: [
+        { shard_id: 0, status: "ok", error_message: null },
+        { shard_id: 1, status: "timeout", error_message: "tiempo agotado" },
+      ],
+      degraded: true,
+      message: "Resultados parciales: 1 de 2 nodos del índice no respondieron a tiempo.",
+    });
+    const user = userEvent.setup();
+    const { container } = render(<App />);
+
+    await user.type(screen.getByRole("combobox"), "python");
+    await screen.findByRole("alert", {}, { timeout: 1500 });
+
+    const results = await axe(container);
+    expect(results).toHaveNoViolations();
   });
 });
