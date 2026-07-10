@@ -3,6 +3,7 @@ import { api, ApiError } from "./api/client";
 import { SearchBox } from "./components/SearchBox";
 import { SearchResults } from "./components/SearchResults";
 import { ShardStatusBanner } from "./components/ShardStatusBanner";
+import { StatsPanel } from "./components/StatsPanel";
 import { useDebouncedValue } from "./hooks/useDebouncedValue";
 import type { SearchResponse } from "./types/api";
 
@@ -112,6 +113,8 @@ export default function App() {
             Escribe arriba para buscar en el corpus indexado.
           </p>
         )}
+
+        <StatsPanel />
       </main>
     </div>
   );
