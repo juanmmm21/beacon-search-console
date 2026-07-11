@@ -239,6 +239,58 @@ npm run dev            # → http://localhost:5173
 reads its paths and parameters from `BEACON_*` environment variables
 (`config.py` documents each one); by default everything points at `data/`.
 
+## Quick start if the corpus is already bootstrapped
+
+If `data/` (the bootstrap output), `backend/.venv` and `frontend/node_modules`
+already exist from a previous run, there is no need to repeat step 1 above —
+the corpus doesn't change until `scripts/bootstrap_corpus.sh` is run again, so
+just start the two long-running processes directly:
+
+```bash
+# Terminal 1 — API (spawns the real shard subprocesses on startup)
+cd backend
+source .venv/bin/activate
+python -m beacon_search_console --port 8000
+
+# Terminal 2 — UI
+cd frontend
+npm run dev            # → http://localhost:5173
+```
+
+Open `http://localhost:5173`, type a query (e.g. `python tutorial`), and the
+results, snippets and index-stats panel are all live against the real corpus.
+
+**Manually forcing shard degradation** — the same check the automated tests
+and the manual smoke test both cover, but doable by hand against the real,
+running cluster: kill one of the shard subprocesses `DistributedSearchPipeline`
+started and confirm the next search degrades instead of failing.
+
+```bash
+# 1. Find the shard processes and their PIDs — one per configured shard
+#    (default 3), each running distributed_index_sharding's own serve-shard.
+ps aux | grep serve-shard | grep -v grep
+
+# Example output (PID in the second column, --shard-id near the end):
+# golfeno  18101  ...  serve-shard .../data/shards/shard-0 --shard-id 0 ...
+# golfeno  18102  ...  serve-shard .../data/shards/shard-1 --shard-id 1 ...
+# golfeno  18103  ...  serve-shard .../data/shards/shard-2 --shard-id 2 ...
+
+# 2. Kill one shard by its PID (shard 1 in this example)
+kill -9 18102
+
+# 3. Search again — either in the UI, or directly against the API:
+curl -s "http://127.0.0.1:8000/api/v1/search?q=python%20tutorial&limit=3" | python3 -m json.tool
+```
+
+The response comes back with `"degraded": true`, a `message` naming how many
+shards failed to respond, and a `shard_statuses` entry with `"status": "error"`
+for the killed shard (a connection-refused error, not a timeout, since the
+process is simply gone) — the other shards' results still populate `results`.
+In the UI, the same information renders as the amber "Índice degradado" banner
+(`ShardStatusBanner`) listing every shard's status, with the surviving
+results still shown underneath it. Restarting the API respawns a fresh,
+healthy cluster; there's nothing to clean up on the killed shard itself.
+
 ## API
 
 The contract is versioned under `/api/v1` from the first commit. All
