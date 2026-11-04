@@ -46,3 +46,8 @@ frontend/.vite/
 AGENTS.md
 CLAUDE.md
 START_HERE.md
+
+# Evaluación: colecciones BEIR descargadas e índices construidos a partir de
+# ellas (reproducibles con `python -m beacon_search_console.evaluation run`)
+/eval/data/
+/eval/work/

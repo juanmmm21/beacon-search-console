@@ -1,0 +1,58 @@
+{
+  "dataset": "scifact",
+  "split": "test",
+  "documents": 5183,
+  "queries": 100,
+  "max_queries": 100,
+  "retrieval_depth": 100,
+  "measured_at": "2026-11-04T14:33:11+00:00",
+  "environment": {
+    "platform": "Linux-6.18.54.1-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+    "python": "3.12.3",
+    "cpu": "AMD Ryzen 7 7700X 8-Core Processor",
+    "logical_cpus": 16,
+    "memory_gib": 7.3,
+    "gpu": "NVIDIA GeForce RTX 5060",
+    "packages": {
+      "beacon-search-console": "0.1.0",
+      "inverted-index-builder": "0.1.0",
+      "index-compression-codec": "0.1.0",
+      "bm25-ranking-engine": "0.1.0",
+      "learning-to-rank-reranker": "0.1.0",
+      "query-parser-autocomplete": "0.1.0",
+      "distributed-index-sharding": "0.1.0",
+      "numpy": "2.5.4",
+      "lightgbm": "4.7.0",
+      "torch": "2.11.0+cu128",
+      "transformers": "5.22.1"
+    }
+  },
+  "results": [
+    {
+      "system": "bm25",
+      "metrics": {
+        "ndcg_at_10": 0.6219729526608628,
+        "mrr_at_10": 0.5972777777777779,
+        "recall_at_100": 0.838,
+        "evaluated_queries": 100,
+        "skipped_queries": 0
+      },
+      "seconds": 0.366,
+      "queries_per_second": 273.17,
+      "notes": ""
+    },
+    {
+      "system": "bm25+ltr-qrels",
+      "metrics": {
+        "ndcg_at_10": 0.6121667338915163,
+        "mrr_at_10": 0.5798253968253969,
+        "recall_at_100": 0.838,
+        "evaluated_queries": 100,
+        "skipped_queries": 0
+      },
+      "seconds": 2.179,
+      "queries_per_second": 45.89,
+      "notes": "modelo entrenado con qrels/train.tsv (273 queries)"
+    }
+  ]
+}

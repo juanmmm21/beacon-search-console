@@ -1,0 +1,40 @@
+name: relevance-eval
+
+on:
+  push:
+    branches: [main, "feat/**"]
+  pull_request:
+
+jobs:
+  scifact-subset:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: backend/pyproject.toml
+      - name: Install backend
+        run: pip install -e "backend[dev]"
+      - name: Cache BEIR SciFact
+        uses: actions/cache@v4
+        with:
+          path: eval/data/scifact.zip
+          key: beir-scifact-536e14446a0b
+      - name: Evaluate the SciFact subset
+        run: >
+          python -m beacon_search_console.evaluation run
+          --dataset scifact --systems bm25,bm25+ltr-qrels
+          --max-queries 100 --ltr-train-max-queries 300
+          --output eval/results/ci.json
+      - name: Fail on metric regression
+        run: >
+          python -m beacon_search_console.evaluation check
+          --report eval/results/ci.json --baseline eval/baselines/ci.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: eval-report
+          path: eval/results/ci.json

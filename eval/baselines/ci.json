@@ -1,0 +1,10 @@
+{
+  "description": "SciFact test, first 100 queries by query id; LTR trained on 300 queries of qrels/train.tsv. Measured on 2026-11-04 (see eval/results/ci-baseline.json for machine and versions). The CI job fails if any metric drops more than `tolerance` (absolute) below these values.",
+  "dataset": "scifact",
+  "max_queries": 100,
+  "tolerance": 0.005,
+  "metrics": {
+    "bm25": {"ndcg_at_10": 0.6220, "mrr_at_10": 0.5973, "recall_at_100": 0.8380},
+    "bm25+ltr-qrels": {"ndcg_at_10": 0.6122, "mrr_at_10": 0.5798, "recall_at_100": 0.8380}
+  }
+}
