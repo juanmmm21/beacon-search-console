@@ -6,7 +6,10 @@ build-backend = "hatchling.build"
 name = "beacon-search-console"
 version = "0.1.0"
 description = "Buscador funcional completo (FastAPI + React) que ensambla el ecosistema beacon-search-engine sobre un corpus real."
-readme = "../README.md"
+# hatchling >= 1.26 rechaza un readme fuera del directorio del proyecto, y
+# este paquete vive en backend/: se usa un README propio del paquete que
+# remite al del repositorio.
+readme = "README.md"
 requires-python = ">=3.11"
 license = { file = "../LICENSE" }
 authors = [{ name = "Juan Martos Cuevas", email = "martoscuevasjuan@gmail.com" }]
