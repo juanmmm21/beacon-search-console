@@ -83,5 +83,6 @@ module = [
     "query_parser_autocomplete.*",
     "learning_to_rank_reranker.*",
     "bm25_ranking_engine.*",
+    "inverted_index_builder.*",
 ]
 ignore_missing_imports = true
