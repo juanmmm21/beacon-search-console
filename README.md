@@ -12,6 +12,14 @@ reranking, live autocomplete, spell correction, and highlighted snippets. No
 Elasticsearch, no Lucene, no search SaaS anywhere in the stack: every layer
 underneath this app is one of the ecosystem's own from-scratch projects.
 
+It also ships **Beacon Docs**, a public search product over curated technical
+documentation (Python, Rust, MDN Web Docs) with a versioned JSON API, an MCP
+server for agents, hybrid retrieval and a measured relevance evaluation on
+BEIR — see [Beacon Docs](#beacon-docs-the-public-documentation-search) and
+[Relevance evaluation](#relevance-evaluation).
+
+![Beacon Docs: hybrid search over Python, Rust and MDN documentation, each result with its source and license](docs/images/docs-search.png)
+
 ## What problem it solves
 
 Each of the nine previous projects proves one piece of search infrastructure
@@ -225,7 +233,7 @@ bash scripts/bootstrap_corpus.sh
 #    them before serving).
 cd backend
 python3 -m venv .venv && source .venv/bin/activate
-pip install -e ".[dev]"
+pip install -e ".[dev]"          # add ",hybrid" for the hybrid search and its evaluation
 python -m beacon_search_console --port 8000
 
 # 3. Start the UI (proxies /api to :8000).
@@ -306,6 +314,172 @@ A shard failing mid-query never produces a 500: the response arrives with
 `degraded: true`, the failing shard's `status`/`error_message` in
 `shard_statuses`, and results from the surviving shards.
 
+## Relevance evaluation
+
+`eval/` and `backend/src/beacon_search_console/evaluation/` measure ranking
+quality on public BEIR collections with the same components the console
+serves: the corpus is rewritten as `html-content-extractor` documents,
+indexed by `inverted-index-builder`, scored by `bm25-ranking-engine`,
+reranked by `learning-to-rank-reranker`, and the hybrid systems run
+`hybrid.py`, the same module the docs product uses. Test split, all test
+queries, retrieval depth 100.
+
+```bash
+python -m beacon_search_console.evaluation run --dataset scifact \
+  --systems bm25,bm25+ltr-qrels,dense-hnsw,bm25+dense-rrf,hybrid-rrf+ce \
+  --output eval/results/scifact.json
+```
+
+| Collection | System | nDCG@10 | MRR@10 | Recall@100 |
+|---|---|---|---|---|
+| SciFact (5,183 docs, 300 queries) | BM25 | 0.6646 | 0.6340 | 0.8859 |
+| | BM25 + LTR (synthetic model the console ships) | 0.6521 | 0.6205 | 0.8859 |
+| | BM25 + LTR (trained on the train qrels) | 0.6746 | 0.6445 | 0.8859 |
+| | Dense (MiniLM + HNSW) | 0.6417 | 0.6014 | 0.9217 |
+| | BM25 + dense, RRF | 0.6811 | 0.6403 | 0.9543 |
+| | **Hybrid: RRF + cross-encoder** | **0.6840** | **0.6509** | **0.9543** |
+| NFCorpus (3,633 docs, 323 queries) | BM25 | 0.3100 | 0.5192 | 0.2354 |
+| | BM25 + LTR (synthetic) | 0.3024 | 0.5084 | 0.2354 |
+| | BM25 + LTR (train qrels) | 0.3112 | 0.5251 | 0.2354 |
+| | Dense (MiniLM + HNSW) | 0.3092 | 0.4940 | 0.3101 |
+| | BM25 + dense, RRF | 0.3397 | 0.5414 | 0.3249 |
+| | **Hybrid: RRF + cross-encoder** | **0.3526** | **0.5814** | **0.3249** |
+| FiQA-2018 (57,638 docs, 648 queries) | BM25 | 0.2334 | 0.2890 | 0.5075 |
+| | BM25 + LTR (synthetic) | 0.2271 | 0.2884 | 0.5075 |
+| | BM25 + LTR (train qrels) | 0.2297 | 0.2905 | 0.5075 |
+| | Dense (MiniLM + HNSW) | 0.3509 | 0.4296 | 0.6761 |
+| | BM25 + dense, RRF | 0.3317 | 0.4045 | 0.6859 |
+| | **Hybrid: RRF + cross-encoder** | **0.3651** | **0.4387** | **0.6859** |
+
+Measured on 2026-11-04/05 on an AMD Ryzen 7 7700X (WSL2, 7.3 GiB RAM) with an
+RTX 5060 for the transformer models, Python 3.12.3, NumPy 2.5.4, LightGBM
+4.7.0, PyTorch 2.11.0, transformers 5.22.1, from the `feat/beacon-roadmap`
+branches of every component. The full reports, with timings and notes, are in
+`eval/results/*.json`.
+
+How to read it:
+
+- **PageRank does not apply**: BEIR documents have no links between them, so
+  there is no graph to compute it on; the LTR feature is 0 for every
+  document, the same value an unlinked page gets in production.
+- **The LTR model the console ships hurts** on all three collections: it is
+  trained on synthetic data. Trained on each collection's own judgments it
+  helps a little on SciFact and NFCorpus and still loses on FiQA. LTR only
+  reorders BM25's top 100, so its Recall@100 is BM25's by construction.
+- **Hybrid wins everywhere on nDCG@10**: +0.019 on SciFact, +0.043 on
+  NFCorpus and +0.132 on FiQA over BM25, with large Recall@100 gains (dense
+  retrieval finds what lexical matching misses). On FiQA dense retrieval
+  alone already beats BM25 by far; `all-MiniLM-L6-v2` was trained on a large
+  mix of public question/answer data, so some overlap with these domains
+  cannot be ruled out.
+- **Not measured: MS MARCO.** A dev subset needs a passage collection of 8.8 M
+  documents (or a sampled one, which changes the task); it was left out
+  rather than reported on a convenient sample.
+- **CI**: `.github/workflows/eval.yml` runs BM25 and BM25 + LTR on the first
+  100 SciFact test queries and fails if any metric drops more than 0.005
+  below `eval/baselines/ci.json`.
+
+## Hybrid search
+
+`backend/src/beacon_search_console/hybrid.py` is the only place in the
+ecosystem that uses AI Core components, as package dependencies (the
+`hybrid` extra):
+
+- **Embeddings**: `SiameseTransformer` from
+  [`contrastive-embedding-trainer`](https://github.com/juanmmm21/contrastive-embedding-trainer)
+  (mean pooling + L2 normalization) loading
+  `sentence-transformers/all-MiniLM-L6-v2`; a checkpoint fine-tuned with that
+  repo's `EmbeddingTrainer` loads through the same class.
+- **Vector index**: [`nano-vector-db`](https://github.com/juanmmm21/nano-vector-db)
+  in HNSW mode (M=16, efConstruction=64, efSearch=128). Vectors are stored as
+  `.npy` (dense index format v1: `vectors.npy`, `doc_ids.npy`,
+  `manifest.json`) and the graph is rebuilt on load: nano-vector-db persists
+  with pickle, which this ecosystem never passes between repos.
+- **Fusion**: Reciprocal Rank Fusion (k = 60) of the BM25 and dense top 100.
+  RRF only uses ranks, so an unbounded BM25 score is never added to a cosine
+  similarity.
+- **Rerank**: [`cross-encoder-reranker`](https://github.com/juanmmm21/cross-encoder-reranker)
+  with `cross-encoder/ms-marco-MiniLM-L-6-v2` over the first 50 fused results
+  (20 in the docs product). That component silently falls back to a lexical
+  heuristic if the model cannot load; here that is an explicit error, so a
+  number labelled "cross-encoder" always is one.
+
+## Beacon Docs: the public documentation search
+
+A search product over curated technical documentation, fed by
+[`beacon-search-engine-at-scale`](https://github.com/juanmmm21/beacon-search-engine-at-scale):
+its `vertical-crawl` crawls each source (`deploy/vertical-sources.json` there:
+Python 3 docs, the Rust book and standard library, MDN Web Docs) within its
+URL prefixes and page budget, honoring robots.txt and Crawl-delay, indexes it
+incrementally, and `export-vertical` publishes a bundle this app loads and
+**hot-reloads** when a new one appears. Every result carries its source's
+license and attribution. Swift's book is listed but disabled: docs.swift.org
+serves it as a client-rendered DocC app with no content in the HTML.
+
+The run behind the screenshot: 1,200 pages crawled (400 per source) in 7
+minutes, 1,198 indexed.
+
+```bash
+# Run it against a bundle exported by beacon-search-engine-at-scale
+BEACON_DOCS_BUNDLE_ROOT=/path/to/bundles beacon-search-console --port 8001 docs
+BEACON_DOCS_HYBRID=1 ...   # also load the embedding and cross-encoder models
+cd frontend && npm run dev  # open http://localhost:5173/docs.html
+```
+
+### Public API (`/v1`)
+
+| Endpoint | Parameters | Returns |
+|---|---|---|
+| `GET /v1/search` | `q`, `limit` (1–50), `source` (optional), `mode` (`lexical` or `hybrid`) | results with `url`, `title`, `snippet`, `score` and `source` (name, license, license URL, attribution); `index_version`, `cached`, `took_ms` |
+| `GET /v1/documents/{doc_id}` | — | full text, original URL and the source's license |
+| `GET /v1/sources` | — | indexed sources with their licenses, and disabled ones with the reason |
+| `GET /v1/health` | — | index version, documents per source, hybrid on/off, cache hit ratio |
+
+Each client IP gets a token bucket (default 2 requests/s, bursts of 30); past
+it the API answers `429` with `Retry-After`. `X-Forwarded-For` is only
+trusted when `BEACON_TRUST_PROXY=1` (behind the bundled reverse proxy).
+
+### MCP server
+
+The same search is an MCP server with two tools, `search` (query, limit,
+source, mode) and `fetch_document` (doc_id, max_chars), for agents such as
+Palo. Mistakes an agent can fix (unknown source, unknown document) come back
+as tool errors it can read and retry.
+
+```bash
+# stdio, for an agent on the same machine
+beacon-search-console mcp --bundle-root /path/to/bundles
+# Streamable HTTP: mounted at /mcp of the docs app
+```
+
+### Result cache and latency
+
+`cache.py` is an in-process LRU (2,048 entries, 5 min TTL) whose keys are
+namespaced by the bundle's index version, so a reload invalidates it without
+deleting anything. Degraded or failed responses are never cached.
+
+Target set for the product: **p99 under 50 ms end to end for BM25 searches,
+and under 1 s for uncached hybrid searches.** Measured with
+`scripts/bench_docs_latency.py`: 2,000 requests drawn from 60 queries with a
+Zipf distribution (s = 1.1, seed 42), over the 1,198-page bundle, on the
+machine above, 2026-11-05:
+
+| Mode | Without cache p50 / p99 | With cache p50 / p99 | End to end over HTTP, with cache, p50 / p99 |
+|---|---|---|---|
+| BM25 | 12.6 / 83.8 ms | 0.002 / 7.8 ms (97 % hits) | 1.35 / 10.5 ms |
+| Hybrid, GPU (600 requests) | 125.5 / 594.9 ms | 0.003 / 232.9 ms | 1.54 / 239.0 ms |
+| Hybrid, CPU only (300 requests) | 368.5 / 754.9 ms | 0.004 / 466.1 ms | not measured |
+
+Both targets are met on this machine. A 2-vCPU cloud VM is slower than a
+Ryzen 7 7700X; the CPU-only hybrid numbers there are an estimate until
+measured on the real host. Reports: `eval/results/latency-docs-*.json`.
+
+### Deployment
+
+`deploy/docs-search/` brings the whole product up with Docker Compose on one
+machine (refresher, API, Caddy with automatic HTTPS). Costs and steps are in
+[`docs/DEPLOY.md`](docs/DEPLOY.md).
+
 ## Frontend
 
 - **Debounced search** (300 ms) with in-flight request cancellation — the
@@ -327,18 +501,20 @@ A shard failing mid-query never produces a 500: the response arrives with
 - Shareable searches: the query lives in the URL (`?q=`), updated with
   `replaceState` so typing doesn't pollute history.
 - UI text is in Spanish, code identifiers in English — the ecosystem's
-  standing convention.
+  standing convention. Beacon Docs (`docs.html`), a public product, is in
+  English: source filters, BM25/hybrid toggle, license attribution per
+  result, and a 429-aware error message.
 
 ## Development
 
 ```bash
 # Backend (from backend/)
-pytest                 # 24 tests, including real 2-shard cluster startup
+pytest                 # 59 tests, including real 2-shard cluster startup
 ruff check src/ tests/
 mypy --strict src/
 
 # Frontend (from frontend/)
-npm run test            # Vitest + Testing Library, 30 tests
+npm run test            # Vitest + Testing Library, 38 tests
 npm run typecheck
 npm run build
 
