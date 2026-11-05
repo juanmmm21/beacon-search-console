@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "beacon-search-console"
-version = "0.1.0"
+version = "0.2.0"
 description = "Buscador funcional completo (FastAPI + React) que ensambla el ecosistema beacon-search-engine sobre un corpus real."
 # hatchling >= 1.26 rechaza un readme fuera del directorio del proyecto, y
 # este paquete vive en backend/: se usa un README propio del paquete que
@@ -24,12 +24,25 @@ dependencies = [
     "distributed-index-sharding @ git+https://github.com/juanmmm21/distributed-index-sharding.git@main",
     "query-parser-autocomplete @ git+https://github.com/juanmmm21/query-parser-autocomplete.git@main",
     "learning-to-rank-reranker @ git+https://github.com/juanmmm21/learning-to-rank-reranker.git@main",
+    # La evaluación (`evaluation/`) indexa y puntúa con estos dos directamente.
+    "inverted-index-builder @ git+https://github.com/juanmmm21/inverted-index-builder.git@feat/beacon-roadmap",
+    "bm25-ranking-engine @ git+https://github.com/juanmmm21/bm25-ranking-engine.git@feat/beacon-roadmap",
+    # Servidor MCP del buscador de documentación (`mcp_server.py`).
+    "mcp>=2.3,<3",
 ]
 
 [project.scripts]
 beacon-search-console = "beacon_search_console.__main__:main"
 
 [project.optional-dependencies]
+# Búsqueda híbrida (`hybrid.py`): los tres componentes de AI Core, que traen
+# PyTorch y transformers. Opcional para que la API y el job de CI de BM25 no
+# necesiten instalar varios GB que no usan.
+hybrid = [
+    "nano-vector-db @ git+https://github.com/juanmmm21/nano-vector-db.git@feat/beacon-roadmap",
+    "cross-encoder-reranker @ git+https://github.com/juanmmm21/cross-encoder-reranker.git@feat/beacon-roadmap",
+    "contrastive-embedding-trainer @ git+https://github.com/juanmmm21/contrastive-embedding-trainer.git@feat/beacon-roadmap",
+]
 dev = [
     "pytest>=8,<9",
     # >=1.4: versiones anteriores (0.23-0.26) emiten un DeprecationWarning de
@@ -84,5 +97,10 @@ module = [
     "learning_to_rank_reranker.*",
     "bm25_ranking_engine.*",
     "inverted_index_builder.*",
+    # Componentes de AI Core: tampoco publican `py.typed`.
+    "nano_vector_db.*",
+    "cross_encoder_reranker.*",
+    "contrastive_embedding_trainer.*",
+    "transformers.*",
 ]
 ignore_missing_imports = true
