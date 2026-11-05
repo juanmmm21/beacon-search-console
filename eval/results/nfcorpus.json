@@ -1,0 +1,113 @@
+{
+  "dataset": "nfcorpus",
+  "split": "test",
+  "documents": 3633,
+  "queries": 323,
+  "max_queries": null,
+  "retrieval_depth": 100,
+  "measured_at": "2026-11-05T08:42:36+00:00",
+  "environment": {
+    "platform": "Linux-6.18.54.1-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+    "python": "3.12.3",
+    "cpu": "AMD Ryzen 7 7700X 8-Core Processor",
+    "logical_cpus": 16,
+    "memory_gib": 7.3,
+    "gpu": "NVIDIA GeForce RTX 5060",
+    "packages": {
+      "beacon-search-console": "0.1.0",
+      "inverted-index-builder": "0.1.0",
+      "index-compression-codec": "0.1.0",
+      "bm25-ranking-engine": "0.1.0",
+      "learning-to-rank-reranker": "0.1.0",
+      "query-parser-autocomplete": "0.1.0",
+      "distributed-index-sharding": "0.1.0",
+      "nano-vector-db": "0.1.0",
+      "cross-encoder-reranker": "0.1.0",
+      "contrastive-embedding-trainer": "0.1.0",
+      "numpy": "2.5.4",
+      "lightgbm": "4.7.0",
+      "torch": "2.11.0+cu128",
+      "transformers": "5.22.1"
+    }
+  },
+  "results": [
+    {
+      "system": "bm25",
+      "metrics": {
+        "ndcg_at_10": 0.31000670425123406,
+        "mrr_at_10": 0.5192110177404294,
+        "recall_at_100": 0.23543230626040368,
+        "evaluated_queries": 323,
+        "skipped_queries": 0
+      },
+      "seconds": 0.035,
+      "queries_per_second": 9299.37,
+      "notes": ""
+    },
+    {
+      "system": "bm25+ltr-synthetic",
+      "metrics": {
+        "ndcg_at_10": 0.30243016326125466,
+        "mrr_at_10": 0.5084144183989383,
+        "recall_at_100": 0.23543230626040368,
+        "evaluated_queries": 323,
+        "skipped_queries": 0
+      },
+      "seconds": 0.711,
+      "queries_per_second": 454.06,
+      "notes": "modelo entrenado con el dataset sintético del bootstrap (300 queries)"
+    },
+    {
+      "system": "bm25+ltr-qrels",
+      "metrics": {
+        "ndcg_at_10": 0.3111962266151771,
+        "mrr_at_10": 0.5250712565728044,
+        "recall_at_100": 0.23543230626040368,
+        "evaluated_queries": 323,
+        "skipped_queries": 0
+      },
+      "seconds": 0.726,
+      "queries_per_second": 444.97,
+      "notes": "modelo entrenado con qrels/train.tsv (795 queries)"
+    },
+    {
+      "system": "dense-hnsw",
+      "metrics": {
+        "ndcg_at_10": 0.3091910564817874,
+        "mrr_at_10": 0.4939505626812129,
+        "recall_at_100": 0.31008738450936185,
+        "evaluated_queries": 323,
+        "skipped_queries": 0
+      },
+      "seconds": 4.791,
+      "queries_per_second": 67.42,
+      "notes": "sentence-transformers/all-MiniLM-L6-v2, HNSW de nano-vector-db (M=16, efConstruction=64, efSearch=128); vectores + grafo en 34 s"
+    },
+    {
+      "system": "bm25+dense-rrf",
+      "metrics": {
+        "ndcg_at_10": 0.339749826173973,
+        "mrr_at_10": 0.5413668976362475,
+        "recall_at_100": 0.3248929788913547,
+        "evaluated_queries": 323,
+        "skipped_queries": 0
+      },
+      "seconds": 4.114,
+      "queries_per_second": 78.51,
+      "notes": "RRF k=60; sentence-transformers/all-MiniLM-L6-v2, HNSW de nano-vector-db (M=16, efConstruction=64, efSearch=128); vectores + grafo en 34 s"
+    },
+    {
+      "system": "hybrid-rrf+ce",
+      "metrics": {
+        "ndcg_at_10": 0.35261592144609405,
+        "mrr_at_10": 0.5813786918276083,
+        "recall_at_100": 0.3248929788913547,
+        "evaluated_queries": 323,
+        "skipped_queries": 0
+      },
+      "seconds": 29.64,
+      "queries_per_second": 10.9,
+      "notes": "RRF k=60 + cross-encoder/ms-marco-MiniLM-L-6-v2 sobre los 50 primeros; sentence-transformers/all-MiniLM-L6-v2, HNSW de nano-vector-db (M=16, efConstruction=64, efSearch=128); vectores + grafo en 34 s"
+    }
+  ]
+}
