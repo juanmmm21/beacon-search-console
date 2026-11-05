@@ -353,8 +353,8 @@ python -m beacon_search_console.evaluation run --dataset scifact \
 
 Measured on 2026-11-04/05 on an AMD Ryzen 7 7700X (WSL2, 7.3 GiB RAM) with an
 RTX 5060 for the transformer models, Python 3.12.3, NumPy 2.5.4, LightGBM
-4.7.0, PyTorch 2.11.0, transformers 5.22.1, from the `feat/beacon-roadmap`
-branches of every component. The full reports, with timings and notes, are in
+4.7.0, PyTorch 2.11.0, transformers 5.22.1, with the tagged component
+releases the backend pins. The full reports, with timings and notes, are in
 `eval/results/*.json`.
 
 How to read it:
