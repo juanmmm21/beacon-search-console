@@ -20,7 +20,7 @@ services:
   refresher:
     build:
       # Rama del roadmap mientras no haya etiqueta; tras fusionar, fijar a vX.Y.Z.
-      context: ${BEACON_AT_SCALE_CONTEXT:-https://github.com/juanmmm21/beacon-search-engine-at-scale.git#feat/beacon-roadmap}
+      context: ${BEACON_AT_SCALE_CONTEXT:-https://github.com/juanmmm21/beacon-search-engine-at-scale.git#v0.2.0}
     entrypoint: ["/bin/sh", "/refresh.sh"]
     environment:
       BEACON_REFRESH_HOURS: ${BEACON_REFRESH_HOURS:-168}

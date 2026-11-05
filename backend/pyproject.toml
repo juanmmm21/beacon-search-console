@@ -21,12 +21,12 @@ dependencies = [
     # pieza del ecosistema que ensambla a las demás, así que es la única que
     # necesita importarlas de verdad en vez de solo leer sus formatos en disco
     # (ver ../PROGRESS.md, nota de handoff de distributed-index-sharding).
-    "distributed-index-sharding @ git+https://github.com/juanmmm21/distributed-index-sharding.git@feat/beacon-roadmap",
-    "query-parser-autocomplete @ git+https://github.com/juanmmm21/query-parser-autocomplete.git@main",
-    "learning-to-rank-reranker @ git+https://github.com/juanmmm21/learning-to-rank-reranker.git@main",
+    "distributed-index-sharding @ git+https://github.com/juanmmm21/distributed-index-sharding.git@v0.2.0",
+    "query-parser-autocomplete @ git+https://github.com/juanmmm21/query-parser-autocomplete.git@v0.1.0",
+    "learning-to-rank-reranker @ git+https://github.com/juanmmm21/learning-to-rank-reranker.git@v0.1.0",
     # La evaluación (`evaluation/`) indexa y puntúa con estos dos directamente.
-    "inverted-index-builder @ git+https://github.com/juanmmm21/inverted-index-builder.git@feat/beacon-roadmap",
-    "bm25-ranking-engine @ git+https://github.com/juanmmm21/bm25-ranking-engine.git@feat/beacon-roadmap",
+    "inverted-index-builder @ git+https://github.com/juanmmm21/inverted-index-builder.git@v0.2.0",
+    "bm25-ranking-engine @ git+https://github.com/juanmmm21/bm25-ranking-engine.git@v0.2.0",
     # Servidor MCP del buscador de documentación (`mcp_server.py`).
     "mcp>=2.3,<3",
 ]
@@ -39,9 +39,9 @@ beacon-search-console = "beacon_search_console.__main__:main"
 # PyTorch y transformers. Opcional para que la API y el job de CI de BM25 no
 # necesiten instalar varios GB que no usan.
 hybrid = [
-    "nano-vector-db @ git+https://github.com/juanmmm21/nano-vector-db.git@feat/beacon-roadmap",
-    "cross-encoder-reranker @ git+https://github.com/juanmmm21/cross-encoder-reranker.git@feat/beacon-roadmap",
-    "contrastive-embedding-trainer @ git+https://github.com/juanmmm21/contrastive-embedding-trainer.git@feat/beacon-roadmap",
+    "nano-vector-db @ git+https://github.com/juanmmm21/nano-vector-db.git@v0.1.0",
+    "cross-encoder-reranker @ git+https://github.com/juanmmm21/cross-encoder-reranker.git@v0.1.0",
+    "contrastive-embedding-trainer @ git+https://github.com/juanmmm21/contrastive-embedding-trainer.git@v0.1.0",
 ]
 dev = [
     "pytest>=8,<9",
