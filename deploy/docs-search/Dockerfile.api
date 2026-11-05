@@ -1,0 +1,25 @@
+# API del buscador de documentación (docs_app.py): /v1 y /mcp.
+# Contexto de build: la raíz del repo (ver docker-compose.yml).
+FROM python:3.12-slim
+
+# git: las dependencias del ecosistema se instalan desde sus repos de GitHub.
+# libgomp1: runtime OpenMP que carga LightGBM (learning-to-rank-reranker).
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends git libgomp1 curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# PyTorch en CPU antes que el extra `hybrid`: la rueda por defecto de Linux
+# trae CUDA (varios GB) y este servidor no tiene GPU.
+RUN pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu
+
+WORKDIR /app
+COPY LICENSE ./
+COPY backend/ backend/
+RUN pip install --no-cache-dir "./backend[hybrid]"
+
+# Caché de modelos de Hugging Face en un volumen: se descargan una vez.
+ENV HF_HOME=/var/cache/huggingface
+EXPOSE 8000
+HEALTHCHECK --interval=30s --timeout=5s --start-period=300s \
+    CMD curl -fsS http://127.0.0.1:8000/v1/health || exit 1
+ENTRYPOINT ["beacon-search-console", "--host", "0.0.0.0", "--port", "8000", "docs"]

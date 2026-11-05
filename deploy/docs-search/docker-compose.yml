@@ -1,0 +1,71 @@
+# Buscador público de documentación técnica en una sola máquina.
+#
+#   cp .env.example .env    # dominio y límites
+#   docker compose up -d --build
+#
+# - refresher: rastrea las fuentes curadas (robots.txt, Crawl-delay y
+#   presupuesto de páginas de deploy/vertical-sources.json en
+#   beacon-search-engine-at-scale), indexa de forma incremental y publica un
+#   bundle nuevo en el volumen 'bundles'. Repite cada BEACON_REFRESH_HOURS.
+# - api: beacon-search-console docs (API /v1 + MCP /mcp), recarga el bundle
+#   en caliente sin reiniciar.
+# - web: Caddy con el frontend estático y HTTPS automático.
+#
+# A esta escala (unos miles de páginas) no hacen falta MinIO ni Redis: el
+# pipeline usa el almacenamiento en disco local y aplica las altas en el
+# mismo proceso. Para escalar, el docker-compose.yml de at-scale tiene el
+# mismo flujo sobre MinIO + Redis (perfil 'vertical').
+
+services:
+  refresher:
+    build:
+      # Rama del roadmap mientras no haya etiqueta; tras fusionar, fijar a vX.Y.Z.
+      context: ${BEACON_AT_SCALE_CONTEXT:-https://github.com/juanmmm21/beacon-search-engine-at-scale.git#feat/beacon-roadmap}
+    entrypoint: ["/bin/sh", "/refresh.sh"]
+    environment:
+      BEACON_REFRESH_HOURS: ${BEACON_REFRESH_HOURS:-168}
+    volumes:
+      - ./refresh.sh:/refresh.sh:ro
+      - pipeline-data:/data
+      - bundles:/bundles
+    restart: unless-stopped
+
+  api:
+    build:
+      context: ../..
+      dockerfile: deploy/docs-search/Dockerfile.api
+    environment:
+      BEACON_DOCS_BUNDLE_ROOT: /bundles
+      BEACON_DOCS_HYBRID: ${BEACON_DOCS_HYBRID:-1}
+      BEACON_DOCS_RELOAD_SECONDS: "30"
+      BEACON_RATE_PER_SECOND: ${BEACON_RATE_PER_SECOND:-2}
+      BEACON_RATE_BURST: ${BEACON_RATE_BURST:-30}
+      # Caddy es el único que habla con la API: su X-Forwarded-For es fiable.
+      BEACON_TRUST_PROXY: "1"
+      BEACON_MCP_ALLOWED_HOSTS: ${BEACON_MCP_ALLOWED_HOSTS:-localhost,localhost:*,api:8000}
+      BEACON_CORS_ORIGINS: ${BEACON_CORS_ORIGINS:-*}
+    volumes:
+      - bundles:/bundles:ro
+      - hf-cache:/var/cache/huggingface
+    expose: ["8000"]
+    restart: unless-stopped
+
+  web:
+    build:
+      context: ../..
+      dockerfile: deploy/docs-search/Dockerfile.web
+    environment:
+      BEACON_DOMAIN: ${BEACON_DOMAIN:-:80}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - caddy-data:/data
+    depends_on: [api]
+    restart: unless-stopped
+
+volumes:
+  pipeline-data:
+  bundles:
+  hf-cache:
+  caddy-data:

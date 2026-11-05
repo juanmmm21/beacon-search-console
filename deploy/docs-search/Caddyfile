@@ -1,0 +1,24 @@
+# BEACON_DOMAIN=docs.example.com da HTTPS automático (Let's Encrypt);
+# con BEACON_DOMAIN=:80 sirve HTTP plano, para probar en local.
+{$BEACON_DOMAIN::80} {
+	encode zstd gzip
+
+	handle /v1/* {
+		reverse_proxy api:8000
+	}
+	handle /mcp* {
+		reverse_proxy api:8000
+	}
+	handle {
+		root * /srv
+		# La página del producto es docs.html; la consola original no se publica aquí.
+		rewrite / /docs.html
+		file_server
+	}
+
+	header {
+		X-Content-Type-Options nosniff
+		Referrer-Policy strict-origin-when-cross-origin
+		-Server
+	}
+}
