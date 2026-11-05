@@ -21,7 +21,7 @@ dependencies = [
     # pieza del ecosistema que ensambla a las demás, así que es la única que
     # necesita importarlas de verdad en vez de solo leer sus formatos en disco
     # (ver ../PROGRESS.md, nota de handoff de distributed-index-sharding).
-    "distributed-index-sharding @ git+https://github.com/juanmmm21/distributed-index-sharding.git@main",
+    "distributed-index-sharding @ git+https://github.com/juanmmm21/distributed-index-sharding.git@feat/beacon-roadmap",
     "query-parser-autocomplete @ git+https://github.com/juanmmm21/query-parser-autocomplete.git@main",
     "learning-to-rank-reranker @ git+https://github.com/juanmmm21/learning-to-rank-reranker.git@main",
     # La evaluación (`evaluation/`) indexa y puntúa con estos dos directamente.
@@ -83,7 +83,11 @@ select = ["E", "F", "I", "UP", "B", "SIM"]
 extend-immutable-calls = ["fastapi.Depends", "fastapi.Query"]
 
 [tool.mypy]
-python_version = "3.11"
+# Los stubs de NumPy 2.x usan sintaxis PEP 695, que mypy solo parsea con
+# python_version >= 3.12; no cambia el soporte de Python 3.11 en ejecución
+# (`requires-python`). Mismo ajuste que distributed-index-sharding,
+# learning-to-rank-reranker y pagerank-link-analysis.
+python_version = "3.12"
 strict = true
 
 [[tool.mypy.overrides]]
