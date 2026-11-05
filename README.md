@@ -16,7 +16,9 @@ It also ships **Beacon Docs**, a public search product over curated technical
 documentation (Python, Rust, MDN Web Docs) with a versioned JSON API, an MCP
 server for agents, hybrid retrieval and a measured relevance evaluation on
 BEIR — see [Beacon Docs](#beacon-docs-the-public-documentation-search) and
-[Relevance evaluation](#relevance-evaluation).
+[Relevance evaluation](#relevance-evaluation). You can try it at
+**[docs.mrtz.app](https://docs.mrtz.app)**, a self-hosted instance running on
+a home machine, so it may be offline now and then.
 
 ![Beacon Docs: hybrid search over Python, Rust and MDN documentation, each result with its source and license](docs/images/docs-search.png)
 
@@ -415,6 +417,11 @@ incrementally, and `export-vertical` publishes a bundle this app loads and
 **hot-reloads** when a new one appears. Every result carries its source's
 license and attribution. Swift's book is listed but disabled: docs.swift.org
 serves it as a client-rendered DocC app with no content in the HTML.
+
+A live, self-hosted instance runs at **[docs.mrtz.app](https://docs.mrtz.app)**:
+the web UI, the `/v1` API and the MCP endpoint at `/mcp`, served from a home
+machine through a Cloudflare Tunnel. It goes offline whenever that machine is
+off, so if it doesn't answer, try again later or run it locally as below.
 
 The run behind the screenshot: 1,200 pages crawled (400 per source) in 7
 minutes, 1,198 indexed.
