@@ -3,6 +3,9 @@ mismos componentes que usa la consola en producción (`bm25-ranking-engine`,
 `learning-to-rank-reranker`, `query-parser-autocomplete`), cargados una única
 vez por colección — nunca por query.
 
+La búsqueda híbrida vive aparte, en `hybrid_systems.py`, porque arrastra
+PyTorch: quien solo evalúa BM25 (el job de CI) no necesita instalarlo.
+
 PageRank no interviene: las colecciones BEIR son documentos sueltos sin
 enlaces entre sí, así que no hay grafo del que calcularlo. La feature
 `pagerank_score` del LTR vale 0 para todo documento (el mismo valor que

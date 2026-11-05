@@ -27,12 +27,25 @@ from beacon_search_console.evaluation.systems import (
     train_ltr_on_qrels,
 )
 
+# Mismos valores que `hybrid.py`, repetidos para no importar PyTorch al
+# cargar el runner (ver `hybrid_systems.py`).
+DEFAULT_EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
+DEFAULT_CROSS_ENCODER_MODEL = "cross-encoder/ms-marco-MiniLM-L-6-v2"
+
 logger = logging.getLogger(__name__)
 
 RETRIEVAL_DEPTH = 100
 """Profundidad de cada ranking: la que necesita Recall@100."""
 
-SYSTEM_NAMES: tuple[str, ...] = ("bm25", "bm25+ltr-synthetic", "bm25+ltr-qrels")
+SYSTEM_NAMES: tuple[str, ...] = (
+    "bm25",
+    "bm25+ltr-synthetic",
+    "bm25+ltr-qrels",
+    "dense-hnsw",
+    "bm25+dense-rrf",
+    "hybrid-rrf+ce",
+)
+_HYBRID_SYSTEMS: frozenset[str] = frozenset({"dense-hnsw", "bm25+dense-rrf", "hybrid-rrf+ce"})
 
 
 @dataclass(frozen=True, slots=True)
@@ -54,6 +67,9 @@ class EvaluationConfig:
     """Primeras N queries de test (orden por `query_id`); `None` = todas."""
     ltr_train_max_queries: int | None = 1000
     seed: int = 42
+    embedding_model: str = DEFAULT_EMBEDDING_MODEL
+    cross_encoder_model: str = DEFAULT_CROSS_ENCODER_MODEL
+    rerank_depth: int = 50
 
     def __post_init__(self) -> None:
         unknown = set(self.systems) - set(SYSTEM_NAMES)
@@ -88,6 +104,62 @@ def _run_system(
         queries_per_second=round(len(run) / elapsed, 2) if elapsed > 0 else 0.0,
         notes=notes,
     )
+
+
+def _run_hybrid_systems(
+    config: EvaluationConfig,
+    bm25: Bm25System,
+    corpus: PreparedCorpus,
+    queries: dict[str, str],
+    test_qrels: dict[str, dict[str, int]],
+) -> list[SystemResult]:
+    from beacon_search_console.evaluation.hybrid_systems import (
+        DenseSystem,
+        HybridSystem,
+        load_or_build_dense_index,
+    )
+    from beacon_search_console.hybrid import CrossEncoderStage, HybridSearcher, SentenceEncoder
+
+    encoder = SentenceEncoder(config.embedding_model)
+    texts = corpus.texts()
+    slug = config.embedding_model.replace("/", "__")
+    started = time.perf_counter()
+    dense_index = load_or_build_dense_index(
+        texts, encoder, config.work_dir / config.dataset / f"dense-{slug}"
+    )
+    index_seconds = time.perf_counter() - started
+    needs_cross_encoder = "hybrid-rrf+ce" in config.systems
+    cross_encoder = CrossEncoderStage(config.cross_encoder_model) if needs_cross_encoder else None
+    searcher = HybridSearcher(
+        bm25.retrieve,
+        encoder,
+        dense_index,
+        dict(enumerate(texts)),
+        cross_encoder,
+        candidate_depth=RETRIEVAL_DEPTH,
+        rerank_depth=config.rerank_depth,
+    )
+    dense_notes = (
+        f"{config.embedding_model}, HNSW de nano-vector-db (M={dense_index.params.m}, "
+        f"efConstruction={dense_index.params.ef_construction}, "
+        f"efSearch={dense_index.params.ef_search}); vectores + grafo en {index_seconds:.0f} s"
+    )
+    systems: list[tuple[RetrievalSystem, str]] = []
+    if "dense-hnsw" in config.systems:
+        systems.append((DenseSystem(searcher), dense_notes))
+    if "bm25+dense-rrf" in config.systems:
+        systems.append(
+            (HybridSystem("bm25+dense-rrf", searcher, rerank=False), f"RRF k=60; {dense_notes}")
+        )
+    if cross_encoder is not None:
+        systems.append(
+            (
+                HybridSystem("hybrid-rrf+ce", searcher, rerank=True),
+                f"RRF k=60 + {config.cross_encoder_model} sobre los {config.rerank_depth} "
+                f"primeros; {dense_notes}",
+            )
+        )
+    return [_run_system(system, queries, test_qrels, corpus, notes) for system, notes in systems]
 
 
 def run_evaluation(config: EvaluationConfig) -> dict[str, Any]:
@@ -149,6 +221,10 @@ def run_evaluation(config: EvaluationConfig) -> dict[str, Any]:
                     f"modelo entrenado con qrels/{spec.train_split}.tsv ({used_queries} queries)",
                 )
             )
+
+        hybrid_requested = _HYBRID_SYSTEMS & set(config.systems)
+        if hybrid_requested:
+            results.extend(_run_hybrid_systems(config, bm25, corpus, queries, test_qrels))
 
     finally:
         bm25.close()
