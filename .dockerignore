@@ -1,0 +1,13 @@
+# El contexto de build es la raíz del repo: dependencias y artefactos locales
+# no deben entrar en la imagen (los node_modules del host pisarían los
+# instalados con npm ci y sus enlaces de .bin no se pueden copiar).
+.git
+**/node_modules
+**/.venv
+**/__pycache__
+**/.mypy_cache
+**/.pytest_cache
+**/.ruff_cache
+frontend/dist
+eval/data
+eval/work
