@@ -176,6 +176,37 @@ def bundle_version(root: Path) -> str | None:
         return None
 
 
+_HIGHLIGHT_STOPWORDS: Final[frozenset[str]] = frozenset(
+    [
+        "a",
+        "an",
+        "and",
+        "are",
+        "as",
+        "at",
+        "be",
+        "by",
+        "for",
+        "from",
+        "how",
+        "i",
+        "in",
+        "is",
+        "it",
+        "of",
+        "on",
+        "or",
+        "the",
+        "to",
+        "what",
+        "when",
+        "with",
+    ]
+)
+"""Solo para el resaltado: BM25 ya da poco peso a estas palabras, pero
+marcarlas en el snippet llena el texto de resaltados que no dicen nada."""
+
+
 def query_terms(raw_query: str) -> list[str]:
     parsed = parse_query(raw_query)
     return list(parsed.required_terms) + [term for phrase in parsed.phrases for term in phrase]
@@ -243,7 +274,7 @@ class VerticalSearchEngine:
             ranked = [(hit.doc_id, hit.score) for hit in self._hybrid.search(raw_query, depth)]
         else:
             ranked = self._lexical(raw_query, depth)
-        terms = query_terms(raw_query)
+        highlight = [t for t in query_terms(raw_query) if t.casefold() not in _HIGHLIGHT_STOPWORDS]
         hits: list[DocsHit] = []
         for doc_id, score in ranked:
             document = self.bundle.documents.get(doc_id)
@@ -256,7 +287,7 @@ class VerticalSearchEngine:
                     doc_id=doc_id,
                     url=document.url,
                     title=document.title,
-                    snippet=build_snippet(document.main_text, terms),
+                    snippet=build_snippet(document.main_text, highlight),
                     score=score,
                     source=self.bundle.sources.get(document.source_id or ""),
                 )
