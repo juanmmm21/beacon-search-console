@@ -1,0 +1,56 @@
+{
+  "measured_at": "2026-11-05T09:00:58+00:00",
+  "machine": {
+    "platform": "Linux-6.18.54.1-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+    "processor": "x86_64",
+    "python": "3.12.3"
+  },
+  "versions": {
+    "beacon-search-console": "0.1.0",
+    "bm25-ranking-engine": "0.1.0",
+    "inverted-index-builder": "0.1.0"
+  },
+  "requests": 2000,
+  "distinct_queries": 60,
+  "zipf_s": 1.1,
+  "seed": 42,
+  "runs": [
+    {
+      "mode": "lexical",
+      "without_cache": {
+        "p50_ms": 12.582,
+        "p99_ms": 83.768,
+        "mean_ms": 12.678,
+        "requests": 2000
+      },
+      "with_cache": {
+        "p50_ms": 0.002,
+        "p99_ms": 7.825,
+        "mean_ms": 0.298,
+        "requests": 2000
+      },
+      "cache_hit_ratio": 0.97
+    },
+    {
+      "mode": "lexical",
+      "end_to_end": {
+        "p50_ms": 1.351,
+        "p99_ms": 10.471,
+        "mean_ms": 1.705,
+        "requests": 2000
+      },
+      "cached_responses": 1940
+    }
+  ],
+  "bundle": {
+    "index_version": "62e93d861a833b7615f4c0cd8239a831444806085d3d8adac4190d190d5cd09c",
+    "created_at": "2026-11-05T09:00:35+00:00",
+    "documents": 1198,
+    "documents_per_source": {
+      "mdn": 400,
+      "python": 400,
+      "rust": 398
+    },
+    "hybrid": false
+  }
+}
