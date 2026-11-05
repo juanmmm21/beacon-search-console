@@ -363,3 +363,77 @@ body {
     font-size: 1.7rem;
   }
 }
+
+/* ---------- buscador de documentación (docs.html) ---------- */
+
+.docs-controls {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 14px 0 6px;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chip {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-dim);
+  border-radius: 999px;
+  padding: 6px 14px;
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.chip:hover {
+  color: var(--text);
+}
+
+.chip[aria-pressed="true"] {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--text);
+}
+
+.source-badge {
+  display: inline-block;
+  margin-right: 8px;
+  padding: 1px 8px;
+  border-radius: 6px;
+  background: var(--surface-raised);
+  color: var(--text);
+  font-size: 0.75rem;
+}
+
+.result-license {
+  margin: 6px 0 0;
+  font-size: 0.75rem;
+  color: var(--text-dim);
+}
+
+.result-license a,
+.docs-footer a {
+  color: var(--text-dim);
+}
+
+.docs-footer {
+  margin-top: 40px;
+  padding-top: 18px;
+  border-top: 1px solid var(--border);
+  font-size: 0.85rem;
+  color: var(--text-dim);
+}
+
+.docs-footer ul {
+  padding-left: 18px;
+}
+
+.docs-footer-note code {
+  color: var(--text);
+}
